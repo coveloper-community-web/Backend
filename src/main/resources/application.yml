@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/coveloper_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
+    username: coveloper_user
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret-key: 1+7I0J8nJ3g2x9BQ7w7Rn95TYtVHJtOVT6dW9czt1SQ=  # 256-bit 비밀키(Base64로 인코딩된 문자열)
+  expiration: 3600000  # 토큰 만료 시간 (밀리초 단위, 예: 1시간)
