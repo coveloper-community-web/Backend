@@ -51,6 +51,19 @@ public class JwtTokenProvider {
                 .compact();  // JWT 문자열 반환
     }
 
+//    public boolean validateToken(String token) {
+//        // JWT 토큰 유효성 검사
+//        try {
+//            Jwts.parserBuilder()
+//                    .setSigningKey(key)  // 서명 검증을 위한 키 설정
+//                    .build()
+//                    .parseClaimsJws(token);  // 토큰 파싱
+//            return true;  // 유효한 경우 true 반환
+//        } catch (Exception e) {
+//            return false;  // 유효하지 않은 경우 false 반환
+//        }
+//    }
+
     public boolean validateToken(String token) {
         // JWT 토큰 유효성 검사
         try {
@@ -59,10 +72,20 @@ public class JwtTokenProvider {
                     .build()
                     .parseClaimsJws(token);  // 토큰 파싱
             return true;  // 유효한 경우 true 반환
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            System.err.println("Token is expired: " + e.getMessage());
+        } catch (io.jsonwebtoken.UnsupportedJwtException e) {
+            System.err.println("Token is unsupported: " + e.getMessage());
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            System.err.println("Token is malformed: " + e.getMessage());
+        } catch (io.jsonwebtoken.SignatureException e) {
+            System.err.println("Signature validation failed: " + e.getMessage());
         } catch (Exception e) {
-            return false;  // 유효하지 않은 경우 false 반환
+            System.err.println("Token validation failed: " + e.getMessage());
         }
+        return false;  // 유효하지 않은 경우 false 반환
     }
+
 
     public String getEmail(String token) {
         // JWT 토큰에서 이메일 추출
@@ -78,10 +101,12 @@ public class JwtTokenProvider {
         // Authorization 헤더에서 Bearer 토큰 추출
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);  // "Bearer " 제거 후 토큰 반환
+            // "Bearer " 제거 후 공백 제거
+            return bearerToken.substring(7).trim();  // 트림하여 공백 제거
         }
         return null;  // 토큰이 없는 경우 null 반환
     }
+
 
     public Authentication getAuthentication(String token) {
         // JWT 토큰으로부터 Authentication 객체 생성
