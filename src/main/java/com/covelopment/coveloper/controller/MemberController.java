@@ -27,7 +27,7 @@ public class MemberController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody MemberDTO memberDTO, HttpServletResponse response) {
         try {
-            String token = memberService.authenticate(memberDTO.getEmail(), memberDTO.getPassword());
+            String token = memberService.login(memberDTO.getEmail(), memberDTO.getPassword());
             response.setHeader("Authorization", "Bearer " + token);
             return ResponseEntity.ok("Login successful");
         } catch (IllegalArgumentException e) {

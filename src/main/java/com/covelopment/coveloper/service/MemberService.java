@@ -36,7 +36,7 @@ public class MemberService {
         return memberRepository.save(member);
     }
 
-    public String authenticate(String email, String password) {
+    public String login(String email, String password) {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
 
