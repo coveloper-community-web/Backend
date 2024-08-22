@@ -4,6 +4,7 @@ import com.covelopment.coveloper.dto.MemberDTO;
 import com.covelopment.coveloper.entity.Member;
 import com.covelopment.coveloper.repository.MemberRepository;
 import com.covelopment.coveloper.security.JwtTokenProvider;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -45,5 +46,18 @@ public class MemberService {
         }
 
         return jwtTokenProvider.createToken(email);
+    }
+
+    public boolean isTokenValid(String token) {
+        return jwtTokenProvider.validateToken(token);
+    }
+
+    public String getEmailFromToken(String token) {
+        return jwtTokenProvider.getEmail(token);
+    }
+
+    public Member findByEmail(String email) {
+        return memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
     }
 }
