@@ -16,5 +16,4 @@ spring:
         format_sql: true
 
 jwt:
-  secret-key: 1+7I0J8nJ3g2x9BQ7w7Rn95TYtVHJtOVT6dW9czt1SQ=  # 256-bit 비밀키(Base64로 인코딩된 문자열)
-  expiration: 3600000  # 토큰 만료 시간 (밀리초 단위, 예: 1시간)
+  secret-key: wG8kL6hQW3wG7jA2K9mY9lZqR6oF5tVhD8pB7jR5F9kD6hZ4A6oH4fF2K3wM7sD  # 256-bit 비밀키(Base64로 인코딩된 문자열)
