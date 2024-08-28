@@ -50,20 +50,6 @@ public class JwtTokenProvider {
                 .signWith(key, SignatureAlgorithm.HS256)  // HMAC SHA-256 알고리즘으로 서명
                 .compact();  // JWT 문자열 반환
     }
-
-//    public boolean validateToken(String token) {
-//        // JWT 토큰 유효성 검사
-//        try {
-//            Jwts.parserBuilder()
-//                    .setSigningKey(key)  // 서명 검증을 위한 키 설정
-//                    .build()
-//                    .parseClaimsJws(token);  // 토큰 파싱
-//            return true;  // 유효한 경우 true 반환
-//        } catch (Exception e) {
-//            return false;  // 유효하지 않은 경우 false 반환
-//        }
-//    }
-
     public boolean validateToken(String token) {
         // JWT 토큰 유효성 검사
         try {
