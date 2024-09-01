@@ -46,12 +46,12 @@ public class BoardController {
     }
 
     @PostMapping("/post/{postId}/vote")
-    public ResponseEntity<VoteDTO> voteOnPost(@PathVariable("postId") Long postId, @RequestBody VoteDTO voteDTO, HttpServletRequest request) {
+    public ResponseEntity<VoteDTO> voteOnPost(@PathVariable("postId") Long postId, HttpServletRequest request) {
         String token = tokenUtil.extractToken(request);
         String email = tokenUtil.getEmailFromToken(token);
         Member member = memberService.findByEmail(email);
-        VoteDTO createdVote = boardService.voteOnPost(postId, voteDTO, member);
-        return ResponseEntity.status(201).body(createdVote);  // 201 Created로 응답
+        VoteDTO result = boardService.voteOnPost(postId, member);
+        return ResponseEntity.status(201).body(result);  // 201 Created로 응답
     }
 
     @GetMapping("/posts")

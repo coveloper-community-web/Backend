@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,7 +37,16 @@ public class BoardService {
         post.setContent(postDTO.getContent());
         post.setMember(member);
         Post savedPost = postRepository.save(post);
-        return new PostDTO(savedPost.getId(), savedPost.getTitle(), savedPost.getContent(), member.getName());
+
+        // upvoteCount와 downvoteCount를 포함하여 PostDTO 반환
+        return new PostDTO(
+                savedPost.getId(),
+                savedPost.getTitle(),
+                savedPost.getContent(),
+                member.getName(),
+                savedPost.getUpvoteCount(),
+                savedPost.getDownvoteCount()
+        );
     }
 
     @Transactional
@@ -52,20 +62,39 @@ public class BoardService {
     }
 
     @Transactional
-    public VoteDTO voteOnPost(Long postId, VoteDTO voteDTO, Member member) {
+    public VoteDTO voteOnPost(Long postId, Member member) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
-        Vote vote = new Vote();
-        vote.setPost(post);
-        vote.setMember(member);
-        vote.setUpvote(voteDTO.isUpvote());
-        Vote savedVote = voteRepository.save(vote);
-        return new VoteDTO(savedVote.getId(), savedVote.isUpvote(), post.getId());
+
+        Optional<Vote> existingVote = voteRepository.findByPostAndMember(post, member);
+
+        if (existingVote.isPresent()) {
+            // 사용자가 이미 투표한 경우 -> 투표 취소
+            voteRepository.delete(existingVote.get());
+            post.setUpvoteCount(post.getUpvoteCount() - 1);
+        } else {
+            // 사용자가 투표하지 않은 경우 -> 새로운 투표 추가
+            Vote vote = new Vote();
+            vote.setPost(post);
+            vote.setMember(member);
+            voteRepository.save(vote);
+            post.setUpvoteCount(post.getUpvoteCount() + 1);
+        }
+
+        postRepository.save(post);  // 변경된 추천 수를 저장
+
+        return new VoteDTO(post.getId(), post.getUpvoteCount());
     }
 
     public List<PostDTO> getAllPosts() {
         return postRepository.findAll().stream()
-                .map(post -> new PostDTO(post.getId(), post.getTitle(), post.getContent(), post.getMember().getName()))
+                .map(post -> new PostDTO(
+                        post.getId(),
+                        post.getTitle(),
+                        post.getContent(),
+                        post.getMember().getName(),
+                        post.getUpvoteCount(),
+                        post.getDownvoteCount()))
                 .collect(Collectors.toList());
     }
 }
