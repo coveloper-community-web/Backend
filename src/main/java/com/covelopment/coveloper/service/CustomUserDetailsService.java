@@ -23,6 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
-        return new User(member.getEmail(), member.getPassword(), new ArrayList<>()); // 기본 권한 설정
+        return new User(member.getEmail(), member.getPassword(), new ArrayList<>()); // 권한이 필요한 경우 추가
     }
+
 }

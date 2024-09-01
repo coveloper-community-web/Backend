@@ -1,4 +1,3 @@
-// SecurityConfig.java
 package com.covelopment.coveloper.config;
 
 import com.covelopment.coveloper.filter.JwtAuthenticationFilter;
@@ -6,6 +5,8 @@ import com.covelopment.coveloper.security.JwtTokenProvider;
 import com.covelopment.coveloper.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -27,21 +28,29 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService);
-
         http
-                .csrf(csrf -> csrf.disable())  // REST API의 경우 비활성화, 필요시 활성화
+                .csrf(csrf -> csrf.disable()) // REST API에서는 CSRF 비활성화
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers("/api/members/**").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/members/**").permitAll() // 로그인, 회원가입 등은 인증 없이 접근 가능
+                        .anyRequest().authenticated() // 그 외의 요청은 인증 필요
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class); // JWT 필터 추가
 
         return http.build();
     }
 
     @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService);
+    }
+
+    @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12); // 설정된 강도로 BCrypt 사용
+        return new BCryptPasswordEncoder(12);
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 }

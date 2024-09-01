@@ -50,12 +50,13 @@ public class JwtTokenProvider {
 
     public boolean validateToken(String token) {
         try {
+            // 토큰 파싱 시 만료 여부를 확인합니다.
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
             System.err.println("Token expired: " + e.getMessage());
             return false;
-        } catch (SignatureException e) {  // 여기서 수정
+        } catch (io.jsonwebtoken.SignatureException e) {
             System.err.println("Invalid JWT signature: " + e.getMessage());
             return false;
         } catch (Exception e) {
@@ -63,6 +64,8 @@ public class JwtTokenProvider {
             return false;
         }
     }
+
+
 
     public String getEmail(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();

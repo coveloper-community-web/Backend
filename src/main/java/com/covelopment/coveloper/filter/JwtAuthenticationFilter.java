@@ -6,10 +6,10 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.lang.Nullable; // 이 줄을 추가하세요
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -25,21 +25,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(@Nullable HttpServletRequest request,
-                                    @Nullable HttpServletResponse response,
-                                    @Nullable FilterChain filterChain) throws ServletException, IOException {
-        if (request != null && response != null && filterChain != null) {
-            String token = jwtTokenProvider.resolveToken(request.getHeader("Authorization"));
-            if (token != null && jwtTokenProvider.validateToken(token)) {
-                String email = jwtTokenProvider.getEmail(token);
-                UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            } else {
-                // 인증되지 않은 요청 또는 유효하지 않은 토큰의 경우 로깅
-                logger.warn("Unauthorized access attempt: " + request.getRequestURI());
-            }
-            filterChain.doFilter(request, response);
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+        String token = jwtTokenProvider.resolveToken(request.getHeader("Authorization"));
+
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            String email = jwtTokenProvider.getEmail(token);
+            UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
+
+        filterChain.doFilter(request, response);
     }
 }
