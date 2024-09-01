@@ -11,5 +11,7 @@ public class PostDTO {
     private Long id;
     private String title;
     private String content;
-    private String authorName; // Member의 이름만 포함하여 간단화
+    private String authorName;
+    private int upvoteCount;
+    private int downvoteCount;
 }

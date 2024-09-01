@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class VoteDTO {
-    private Long id;
-    private boolean isUpvote;
-    private Long postId; // Vote가 달린 Post의 ID
+    private Long postId;  // 게시물 ID
+    private int upvoteCount;  // 추천 수
 }

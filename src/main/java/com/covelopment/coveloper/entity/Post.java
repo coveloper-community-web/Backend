@@ -18,7 +18,7 @@ public class Post {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false) // 열 이름 명시적으로 지정
+    @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
     @Column(nullable = false)
@@ -33,6 +33,9 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Vote> votes;
 
+    private int upvoteCount = 0;
+    private int downvoteCount = 0;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -46,5 +49,5 @@ public class Post {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-}
 
+}
