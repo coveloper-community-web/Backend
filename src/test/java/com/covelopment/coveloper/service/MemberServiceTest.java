@@ -71,7 +71,7 @@ public class MemberServiceTest {
         when(jwtTokenProvider.createToken(member.getEmail())).thenReturn(token);
 
         // Note: authenticate method now returns a token string
-        String resultToken = memberService.authenticate(member.getEmail(), member.getPassword());
+        String resultToken = memberService.login(member.getEmail(), member.getPassword());
 
         assertNotNull(resultToken);
         assertEquals(token, resultToken);

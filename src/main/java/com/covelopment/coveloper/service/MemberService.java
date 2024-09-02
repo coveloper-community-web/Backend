@@ -1,7 +1,11 @@
+// MemberService.java
 package com.covelopment.coveloper.service;
 
 import com.covelopment.coveloper.dto.MemberDTO;
 import com.covelopment.coveloper.entity.Member;
+import com.covelopment.coveloper.exception.InvalidCredentialsException;
+import com.covelopment.coveloper.exception.UserAlreadyExistsException;
+import com.covelopment.coveloper.exception.UserNotFoundException;
 import com.covelopment.coveloper.repository.MemberRepository;
 import com.covelopment.coveloper.security.JwtTokenProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,18 +15,18 @@ import org.springframework.stereotype.Service;
 public class MemberService {
 
     private final MemberRepository memberRepository;
-    private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public MemberService(MemberRepository memberRepository, JwtTokenProvider jwtTokenProvider, PasswordEncoder passwordEncoder) {
+    public MemberService(MemberRepository memberRepository, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider) {
         this.memberRepository = memberRepository;
-        this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     public Member registerMember(MemberDTO memberDTO) {
         if (memberRepository.findByEmail(memberDTO.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new UserAlreadyExistsException("Email is already in use");
         }
 
         Member member = new Member();
@@ -36,14 +40,22 @@ public class MemberService {
         return memberRepository.save(member);
     }
 
-    public String authenticate(String email, String password) {
+    public String login(String email, String password) {
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
 
         if (!passwordEncoder.matches(password, member.getPassword())) {
-            throw new IllegalArgumentException("Invalid username or password");
+            throw new InvalidCredentialsException("Invalid credentials");
         }
 
         return jwtTokenProvider.createToken(email);
     }
+
+
+    public Member findByEmail(String email) {
+        return memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+    }
+
+
 }

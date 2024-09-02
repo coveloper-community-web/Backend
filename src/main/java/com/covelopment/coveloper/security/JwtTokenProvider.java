@@ -1,18 +1,17 @@
 package com.covelopment.coveloper.security;
 
+import com.covelopment.coveloper.service.CustomUserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.servlet.http.HttpServletRequest;
 import javax.crypto.SecretKey;
 import java.util.Base64;
 import java.util.Date;
@@ -25,10 +24,10 @@ public class JwtTokenProvider {
 
     private SecretKey key;
 
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService customUserDetailsService;
 
-    public JwtTokenProvider(UserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
+    public JwtTokenProvider(CustomUserDetailsService customUserDetailsService) {
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     @PostConstruct
@@ -39,7 +38,7 @@ public class JwtTokenProvider {
     public String createToken(String email) {
         Claims claims = Jwts.claims().setSubject(email);
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + 1000 * 60 * 60); // 1시간
+        Date expiryDate = new Date(now.getTime() + 1000 * 60 * 60);
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -51,36 +50,37 @@ public class JwtTokenProvider {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()
-                    .parseClaimsJws(token);
+            // 토큰 파싱 시 만료 여부를 확인합니다.
+            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            System.err.println("Token expired: " + e.getMessage());
+            return false;
+        } catch (io.jsonwebtoken.SignatureException e) {
+            System.err.println("Invalid JWT signature: " + e.getMessage());
+            return false;
         } catch (Exception e) {
+            System.err.println("Invalid JWT token: " + e.getMessage());
             return false;
         }
     }
 
+
+
     public String getEmail(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
         return claims.getSubject();
     }
 
-    public String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        return null;
+    public Authentication getAuthentication(String token) {
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(getEmail(token));
+        return new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
-    public Authentication getAuthentication(String token) {
-        String email = getEmail(token);
-        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+    public String resolveToken(String header) {
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.substring(7).trim();
+        }
+        return null;
     }
 }
