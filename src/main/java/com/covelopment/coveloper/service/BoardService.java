@@ -38,17 +38,80 @@ public class BoardService {
         post.setMember(member);
         Post savedPost = postRepository.save(post);
 
-        // upvoteCount와 downvoteCount를 포함하여 PostDTO 반환
         return new PostDTO(
                 savedPost.getId(),
                 savedPost.getTitle(),
                 savedPost.getContent(),
                 member.getName(),
                 savedPost.getUpvoteCount(),
-                savedPost.getDownvoteCount()
+                savedPost.getCreatedAt(),
+                savedPost.getUpdatedAt()
         );
     }
 
+    @Transactional
+    public PostDTO updatePost(Long postId, PostDTO postDTO, Member member) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
+
+        if (!post.getMember().getEmail().equals(member.getEmail())) {
+            throw new IllegalArgumentException("You can only update your own posts");
+        }
+
+        post.setTitle(postDTO.getTitle());
+        post.setContent(postDTO.getContent());
+
+        Post updatedPost = postRepository.save(post);
+
+        return new PostDTO(
+                updatedPost.getId(),
+                updatedPost.getTitle(),
+                updatedPost.getContent(),
+                member.getNickname(),
+                updatedPost.getUpvoteCount(),
+                updatedPost.getCreatedAt(),
+                updatedPost.getUpdatedAt()
+        );
+    }
+
+    @Transactional
+    public PostDTO getPostById(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
+
+        return new PostDTO(
+                post.getId(),
+                post.getTitle(),
+                post.getContent(),
+                post.getMember().getNickname(),
+                post.getUpvoteCount(),
+                post.getCreatedAt(),
+                post.getUpdatedAt()
+        );
+    }
+    public List<PostDTO> getAllPosts() {
+        return postRepository.findAll().stream()
+                .map(post -> new PostDTO(
+                        post.getId(),
+                        post.getTitle(),
+                        post.getContent(),
+                        post.getMember().getNickname(),
+                        post.getUpvoteCount(),
+                        post.getCreatedAt(),
+                        post.getUpdatedAt()))
+                .collect(Collectors.toList());
+    }
+    @Transactional
+    public void deletePost(Long postId, Member member) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
+
+        if (!post.getMember().getEmail().equals(member.getEmail())) {
+            throw new IllegalArgumentException("You can only delete your own posts");
+        }
+
+        postRepository.delete(post);
+    }
     @Transactional
     public CommentDTO addComment(Long postId, CommentDTO commentDTO, Member member) {
         Post post = postRepository.findById(postId)
@@ -84,17 +147,5 @@ public class BoardService {
         postRepository.save(post);  // 변경된 추천 수를 저장
 
         return new VoteDTO(post.getId(), post.getUpvoteCount());
-    }
-
-    public List<PostDTO> getAllPosts() {
-        return postRepository.findAll().stream()
-                .map(post -> new PostDTO(
-                        post.getId(),
-                        post.getTitle(),
-                        post.getContent(),
-                        post.getMember().getNickname(),
-                        post.getUpvoteCount(),
-                        post.getDownvoteCount()))
-                .collect(Collectors.toList());
     }
 }

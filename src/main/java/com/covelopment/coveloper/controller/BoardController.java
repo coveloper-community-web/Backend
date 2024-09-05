@@ -58,4 +58,28 @@ public class BoardController {
     public ResponseEntity<List<PostDTO>> getAllPosts() {
         return ResponseEntity.ok(boardService.getAllPosts());
     }
+
+    @GetMapping("/post/{postId}")
+    public ResponseEntity<PostDTO> getPostById(@PathVariable Long postId) {
+        PostDTO post = boardService.getPostById(postId);
+        return ResponseEntity.ok(post);
+    }
+
+    @PutMapping("/post/{postId}")
+    public ResponseEntity<PostDTO> updatePost(@PathVariable Long postId, @RequestBody PostDTO postDTO, HttpServletRequest request) {
+        String token = tokenUtil.extractToken(request);
+        String email = tokenUtil.getEmailFromToken(token);
+        Member member = memberService.findByEmail(email);
+        PostDTO updatedPost = boardService.updatePost(postId, postDTO, member);
+        return ResponseEntity.ok(updatedPost);
+    }
+
+    @DeleteMapping("/post/{postId}")
+    public ResponseEntity<Void> deletePost(@PathVariable Long postId, HttpServletRequest request) {
+        String token = tokenUtil.extractToken(request);
+        String email = tokenUtil.getEmailFromToken(token);
+        Member member = memberService.findByEmail(email);
+        boardService.deletePost(postId, member);
+        return ResponseEntity.noContent().build();  // 204 No Content로 응답
+    }
 }
