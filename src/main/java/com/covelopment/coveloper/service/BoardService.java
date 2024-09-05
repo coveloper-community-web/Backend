@@ -92,7 +92,7 @@ public class BoardService {
                         post.getId(),
                         post.getTitle(),
                         post.getContent(),
-                        post.getMember().getName(),
+                        post.getMember().getNickname(),
                         post.getUpvoteCount(),
                         post.getDownvoteCount()))
                 .collect(Collectors.toList());
