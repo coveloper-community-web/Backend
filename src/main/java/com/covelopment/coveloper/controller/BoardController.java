@@ -36,13 +36,41 @@ public class BoardController {
         return ResponseEntity.status(201).body(createdPost);  // 201 Created로 응답
     }
 
+    // 댓글 생성
     @PostMapping("/post/{postId}/comment")
-    public ResponseEntity<CommentDTO> addComment(@PathVariable("postId") Long postId, @RequestBody CommentDTO commentDTO, HttpServletRequest request) {
+    public ResponseEntity<CommentDTO> addComment(@PathVariable Long postId, @RequestBody CommentDTO commentDTO, HttpServletRequest request) {
         String token = tokenUtil.extractToken(request);
         String email = tokenUtil.getEmailFromToken(token);
         Member member = memberService.findByEmail(email);
         CommentDTO createdComment = boardService.addComment(postId, commentDTO, member);
-        return ResponseEntity.status(201).body(createdComment);  // 201 Created로 응답
+        return ResponseEntity.status(201).body(createdComment);
+    }
+
+    // 댓글 조회 (특정 게시글의 모든 댓글)
+    @GetMapping("/post/{postId}/comments")
+    public ResponseEntity<List<CommentDTO>> getCommentsByPostId(@PathVariable Long postId) {
+        List<CommentDTO> comments = boardService.getCommentsByPostId(postId);
+        return ResponseEntity.ok(comments);
+    }
+
+    // 댓글 수정
+    @PutMapping("/comment/{commentId}")
+    public ResponseEntity<CommentDTO> updateComment(@PathVariable Long commentId, @RequestBody CommentDTO commentDTO, HttpServletRequest request) {
+        String token = tokenUtil.extractToken(request);
+        String email = tokenUtil.getEmailFromToken(token);
+        Member member = memberService.findByEmail(email);
+        CommentDTO updatedComment = boardService.updateComment(commentId, commentDTO, member);
+        return ResponseEntity.ok(updatedComment);
+    }
+
+    // 댓글 삭제
+    @DeleteMapping("/comment/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId, HttpServletRequest request) {
+        String token = tokenUtil.extractToken(request);
+        String email = tokenUtil.getEmailFromToken(token);
+        Member member = memberService.findByEmail(email);
+        boardService.deleteComment(commentId, member);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/post/{postId}/vote")

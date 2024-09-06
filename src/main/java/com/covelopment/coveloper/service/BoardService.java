@@ -112,6 +112,7 @@ public class BoardService {
 
         postRepository.delete(post);
     }
+    // 댓글 생성
     @Transactional
     public CommentDTO addComment(Long postId, CommentDTO commentDTO, Member member) {
         Post post = postRepository.findById(postId)
@@ -122,6 +123,40 @@ public class BoardService {
         comment.setMember(member);
         Comment savedComment = commentRepository.save(comment);
         return new CommentDTO(savedComment.getId(), savedComment.getContent(), member.getName(), post.getId());
+    }
+
+    // 댓글 조회
+    @Transactional(readOnly = true)
+    public List<CommentDTO> getCommentsByPostId(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
+        return post.getComments().stream()
+                .map(comment -> new CommentDTO(comment.getId(), comment.getContent(), comment.getMember().getName(), postId))
+                .collect(Collectors.toList());
+    }
+
+    // 댓글 수정
+    @Transactional
+    public CommentDTO updateComment(Long commentId, CommentDTO commentDTO, Member member) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid comment ID"));
+        if (!comment.getMember().getId().equals(member.getId())) {
+            throw new IllegalArgumentException("Unauthorized");
+        }
+        comment.setContent(commentDTO.getContent());
+        commentRepository.save(comment);
+        return new CommentDTO(comment.getId(), comment.getContent(), member.getName(), comment.getPost().getId());
+    }
+
+    // 댓글 삭제
+    @Transactional
+    public void deleteComment(Long commentId, Member member) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid comment ID"));
+        if (!comment.getMember().getId().equals(member.getId())) {
+            throw new IllegalArgumentException("Unauthorized");
+        }
+        commentRepository.delete(comment);
     }
 
     @Transactional
