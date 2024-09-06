@@ -43,7 +43,7 @@ public class BoardService {
                 savedPost.getId(),
                 savedPost.getTitle(),
                 savedPost.getContent(),
-                member.getName(),
+                member.getNickname(),
                 savedPost.getUpvoteCount(),
                 savedPost.getCreatedAt(),
                 savedPost.getUpdatedAt()
