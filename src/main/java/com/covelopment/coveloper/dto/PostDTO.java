@@ -13,7 +13,7 @@ public class PostDTO {
     private Long id;
     private String title;
     private String content;
-    private String authorNickname;
+    private String authorName;
     private int upvoteCount;
     private LocalDateTime createdAt; // 생성 시간
     private LocalDateTime updatedAt; // 수정 시간
