@@ -30,9 +30,16 @@ public class Comment {
     private String content;
 
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();  // 생성 시에도 updatedAt 설정
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();  // 수정 시 updatedAt 갱신
     }
 }

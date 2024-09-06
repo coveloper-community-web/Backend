@@ -13,6 +13,7 @@ import com.covelopment.coveloper.repository.VoteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -117,12 +118,30 @@ public class BoardService {
     public CommentDTO addComment(Long postId, CommentDTO commentDTO, Member member) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
+
+        // 댓글 내용이 유효한지 확인
+        if (commentDTO.getContent() == null || commentDTO.getContent().trim().isEmpty()) {
+            throw new IllegalArgumentException("Comment content cannot be empty.");
+        }
+
+        // 새로운 댓글 생성
         Comment comment = new Comment();
         comment.setContent(commentDTO.getContent());
-        comment.setPost(post);
-        comment.setMember(member);
+        comment.setPost(post);  // 해당 게시글과 연결
+        comment.setMember(member);  // 댓글 작성자 설정
+
+        // 댓글 저장
         Comment savedComment = commentRepository.save(comment);
-        return new CommentDTO(savedComment.getId(), savedComment.getContent(), member.getName(), post.getId());
+
+        // 저장된 댓글 정보를 반환
+        return new CommentDTO(
+                savedComment.getId(),
+                savedComment.getContent(),
+                member.getName(),
+                post.getId(),
+                savedComment.getCreatedAt(),  // 생성 시간 반환
+                savedComment.getUpdatedAt()   // 수정 시간 반환
+        );
     }
 
     // 댓글 조회
@@ -131,30 +150,29 @@ public class BoardService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
         return post.getComments().stream()
-                .map(comment -> new CommentDTO(comment.getId(), comment.getContent(), comment.getMember().getName(), postId))
+                .sorted(Comparator.comparing(Comment::getCreatedAt).reversed())  // 최신순 정렬
+                .map(comment -> new CommentDTO(comment.getId(), comment.getContent(), comment.getMember().getName(), postId, comment.getCreatedAt(), comment.getUpdatedAt()))
                 .collect(Collectors.toList());
     }
 
-    // 댓글 수정
     @Transactional
     public CommentDTO updateComment(Long commentId, CommentDTO commentDTO, Member member) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid comment ID"));
         if (!comment.getMember().getId().equals(member.getId())) {
-            throw new IllegalArgumentException("Unauthorized");
+            throw new IllegalArgumentException("Unauthorized access.");
         }
         comment.setContent(commentDTO.getContent());
         commentRepository.save(comment);
-        return new CommentDTO(comment.getId(), comment.getContent(), member.getName(), comment.getPost().getId());
+        return new CommentDTO(comment.getId(), comment.getContent(), member.getName(), comment.getPost().getId(), comment.getCreatedAt(), comment.getUpdatedAt());
     }
 
-    // 댓글 삭제
     @Transactional
     public void deleteComment(Long commentId, Member member) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid comment ID"));
         if (!comment.getMember().getId().equals(member.getId())) {
-            throw new IllegalArgumentException("Unauthorized");
+            throw new IllegalArgumentException("Unauthorized access.");
         }
         commentRepository.delete(comment);
     }
