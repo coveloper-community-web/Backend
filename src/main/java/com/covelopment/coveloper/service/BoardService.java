@@ -137,7 +137,7 @@ public class BoardService {
         return new CommentDTO(
                 savedComment.getId(),
                 savedComment.getContent(),
-                member.getName(),
+                member.getNickname(),
                 post.getId(),
                 savedComment.getCreatedAt(),  // 생성 시간 반환
                 savedComment.getUpdatedAt()   // 수정 시간 반환
@@ -151,7 +151,7 @@ public class BoardService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
         return post.getComments().stream()
                 .sorted(Comparator.comparing(Comment::getCreatedAt).reversed())  // 최신순 정렬
-                .map(comment -> new CommentDTO(comment.getId(), comment.getContent(), comment.getMember().getName(), postId, comment.getCreatedAt(), comment.getUpdatedAt()))
+                .map(comment -> new CommentDTO(comment.getId(), comment.getContent(), comment.getMember().getNickname(), postId, comment.getCreatedAt(), comment.getUpdatedAt()))
                 .collect(Collectors.toList());
     }
 
@@ -164,7 +164,7 @@ public class BoardService {
         }
         comment.setContent(commentDTO.getContent());
         commentRepository.save(comment);
-        return new CommentDTO(comment.getId(), comment.getContent(), member.getName(), comment.getPost().getId(), comment.getCreatedAt(), comment.getUpdatedAt());
+        return new CommentDTO(comment.getId(), comment.getContent(), member.getNickname(), comment.getPost().getId(), comment.getCreatedAt(), comment.getUpdatedAt());
     }
 
     @Transactional
