@@ -1,5 +1,6 @@
 package com.covelopment.coveloper.dto;
 
+import com.covelopment.coveloper.entity.BoardType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,13 @@ public class PostDTO {
     private String content;
     private String authorName;
     private int upvoteCount;
-    private LocalDateTime createdAt; // 생성 시간
-    private LocalDateTime updatedAt; // 수정 시간
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    private BoardType boardType;  // 게시판 유형
+
+    // 구인 게시판 전용 필드
+    private String projectType;
+    private int teamSize;
+    private int currentMembers;
 }

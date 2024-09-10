@@ -3,6 +3,7 @@ package com.covelopment.coveloper.service;
 import com.covelopment.coveloper.dto.CommentDTO;
 import com.covelopment.coveloper.dto.PostDTO;
 import com.covelopment.coveloper.dto.VoteDTO;
+import com.covelopment.coveloper.entity.BoardType;
 import com.covelopment.coveloper.entity.Comment;
 import com.covelopment.coveloper.entity.Member;
 import com.covelopment.coveloper.entity.Post;
@@ -37,6 +38,15 @@ public class BoardService {
         post.setTitle(postDTO.getTitle());
         post.setContent(postDTO.getContent());
         post.setMember(member);
+        post.setBoardType(postDTO.getBoardType());
+
+        // 구인 게시판의 경우 추가 필드 설정
+        if (post.getBoardType() == BoardType.RECRUITMENT) {
+            post.setProjectType(postDTO.getProjectType());
+            post.setTeamSize(postDTO.getTeamSize());
+            post.setCurrentMembers(postDTO.getCurrentMembers());
+        }
+
         Post savedPost = postRepository.save(post);
 
         return new PostDTO(
@@ -46,7 +56,11 @@ public class BoardService {
                 member.getNickname(),
                 savedPost.getUpvoteCount(),
                 savedPost.getCreatedAt(),
-                savedPost.getUpdatedAt()
+                savedPost.getUpdatedAt(),
+                savedPost.getBoardType(),
+                savedPost.getProjectType(),
+                savedPost.getTeamSize(),
+                savedPost.getCurrentMembers()
         );
     }
 
@@ -62,6 +76,13 @@ public class BoardService {
         post.setTitle(postDTO.getTitle());
         post.setContent(postDTO.getContent());
 
+        // 구인 게시판의 경우 추가 필드 업데이트
+        if (post.getBoardType() == BoardType.RECRUITMENT) {
+            post.setProjectType(postDTO.getProjectType());
+            post.setTeamSize(postDTO.getTeamSize());
+            post.setCurrentMembers(postDTO.getCurrentMembers());
+        }
+
         Post updatedPost = postRepository.save(post);
 
         return new PostDTO(
@@ -71,7 +92,11 @@ public class BoardService {
                 member.getNickname(),
                 updatedPost.getUpvoteCount(),
                 updatedPost.getCreatedAt(),
-                updatedPost.getUpdatedAt()
+                updatedPost.getUpdatedAt(),
+                updatedPost.getBoardType(),
+                updatedPost.getProjectType(),
+                updatedPost.getTeamSize(),
+                updatedPost.getCurrentMembers()
         );
     }
 
@@ -87,9 +112,14 @@ public class BoardService {
                 post.getMember().getNickname(),
                 post.getUpvoteCount(),
                 post.getCreatedAt(),
-                post.getUpdatedAt()
+                post.getUpdatedAt(),
+                post.getBoardType(),
+                post.getProjectType(),
+                post.getTeamSize(),
+                post.getCurrentMembers()
         );
     }
+
     public List<PostDTO> getAllPosts() {
         return postRepository.findAll().stream()
                 .map(post -> new PostDTO(
@@ -99,9 +129,15 @@ public class BoardService {
                         post.getMember().getNickname(),
                         post.getUpvoteCount(),
                         post.getCreatedAt(),
-                        post.getUpdatedAt()))
+                        post.getUpdatedAt(),
+                        post.getBoardType(),
+                        post.getProjectType(),
+                        post.getTeamSize(),
+                        post.getCurrentMembers()
+                ))
                 .collect(Collectors.toList());
     }
+
     @Transactional
     public void deletePost(Long postId, Member member) {
         Post post = postRepository.findById(postId)
@@ -113,38 +149,53 @@ public class BoardService {
 
         postRepository.delete(post);
     }
-    // 댓글 생성
+
+    // BoardService.java
+    @Transactional
+    public void selectAnswer(Long postId, Long commentId, Member member) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
+
+        if (post.getBoardType() != BoardType.QNA) {
+            throw new IllegalArgumentException("Only QnA posts can have selected answers.");
+        }
+
+        if (!post.getMember().getId().equals(member.getId())) {
+            throw new IllegalArgumentException("Only the post author can select an answer.");
+        }
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid comment ID"));
+
+        // 기존에 채택된 답변이 있는지 확인 (이미 채택된 답변이 있으면 오류 처리)
+        List<Comment> comments = post.getComments();
+        for (Comment c : comments) {
+            if (c.isSelected()) {
+                throw new IllegalArgumentException("An answer has already been selected.");
+            }
+        }
+
+        // 답변을 채택
+        comment.setSelected(true);
+        commentRepository.save(comment);  // 채택된 답변 저장
+    }
+
+
+    // 댓글 생성, 조회, 수정, 삭제 로직 (이전과 동일)
     @Transactional
     public CommentDTO addComment(Long postId, CommentDTO commentDTO, Member member) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
 
-        // 댓글 내용이 유효한지 확인
-        if (commentDTO.getContent() == null || commentDTO.getContent().trim().isEmpty()) {
-            throw new IllegalArgumentException("Comment content cannot be empty.");
-        }
-
-        // 새로운 댓글 생성
         Comment comment = new Comment();
         comment.setContent(commentDTO.getContent());
-        comment.setPost(post);  // 해당 게시글과 연결
-        comment.setMember(member);  // 댓글 작성자 설정
-
-        // 댓글 저장
+        comment.setPost(post);
+        comment.setMember(member);
         Comment savedComment = commentRepository.save(comment);
 
-        // 저장된 댓글 정보를 반환
-        return new CommentDTO(
-                savedComment.getId(),
-                savedComment.getContent(),
-                member.getNickname(),
-                post.getId(),
-                savedComment.getCreatedAt(),  // 생성 시간 반환
-                savedComment.getUpdatedAt()   // 수정 시간 반환
-        );
+        return new CommentDTO(savedComment.getId(), savedComment.getContent(), member.getNickname(), post.getId(), savedComment.getCreatedAt(), savedComment.getUpdatedAt());
     }
 
-    // 댓글 조회
     @Transactional(readOnly = true)
     public List<CommentDTO> getCommentsByPostId(Long postId) {
         Post post = postRepository.findById(postId)
@@ -185,11 +236,11 @@ public class BoardService {
         Optional<Vote> existingVote = voteRepository.findByPostAndMember(post, member);
 
         if (existingVote.isPresent()) {
-            // 사용자가 이미 투표한 경우 -> 투표 취소
+            // 이미 투표한 경우 투표 취소
             voteRepository.delete(existingVote.get());
             post.setUpvoteCount(post.getUpvoteCount() - 1);
         } else {
-            // 사용자가 투표하지 않은 경우 -> 새로운 투표 추가
+            // 새로운 투표 추가
             Vote vote = new Vote();
             vote.setPost(post);
             vote.setMember(member);
@@ -197,8 +248,27 @@ public class BoardService {
             post.setUpvoteCount(post.getUpvoteCount() + 1);
         }
 
-        postRepository.save(post);  // 변경된 추천 수를 저장
+        postRepository.save(post);  // 변경된 추천 수 저장
 
         return new VoteDTO(post.getId(), post.getUpvoteCount());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PostDTO> getPostsByMember(Member member) {
+        return postRepository.findByMember(member).stream()
+                .map(post -> new PostDTO(
+                        post.getId(),
+                        post.getTitle(),
+                        post.getContent(),
+                        post.getMember().getNickname(),
+                        post.getUpvoteCount(),
+                        post.getCreatedAt(),
+                        post.getUpdatedAt(),
+                        post.getBoardType(),
+                        post.getProjectType(),
+                        post.getTeamSize(),
+                        post.getCurrentMembers()
+                ))
+                .collect(Collectors.toList());
     }
 }

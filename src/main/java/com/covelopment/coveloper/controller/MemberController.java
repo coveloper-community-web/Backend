@@ -2,7 +2,9 @@
 package com.covelopment.coveloper.controller;
 
 import com.covelopment.coveloper.dto.MemberDTO;
+import com.covelopment.coveloper.dto.PostDTO;
 import com.covelopment.coveloper.entity.Member;
+import com.covelopment.coveloper.service.BoardService;
 import com.covelopment.coveloper.service.MemberService;
 import com.covelopment.coveloper.util.TokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -20,12 +23,15 @@ import java.util.Map;
 public class MemberController {
 
     private final MemberService memberService;
+    private final BoardService boardService;
     private final TokenUtil tokenUtil;
 
-    public MemberController(MemberService memberService, TokenUtil tokenUtil) {
+    public MemberController(MemberService memberService, BoardService boardService, TokenUtil tokenUtil) {
         this.memberService = memberService;
+        this.boardService = boardService;
         this.tokenUtil = tokenUtil;
     }
+
 
     @PostMapping("/register")
     public ResponseEntity<Member> registerMember(@Validated @RequestBody MemberDTO memberDTO) {
@@ -62,4 +68,14 @@ public class MemberController {
         return ResponseEntity.ok(member);
     }
 
+    // 특정 회원의 게시글 조회
+    @GetMapping("/posts")
+    public ResponseEntity<List<PostDTO>> getMyPosts(HttpServletRequest request) {
+        String token = tokenUtil.extractToken(request);
+        String email = tokenUtil.getEmailFromToken(token);
+        Member member = memberService.findByEmail(email);
+
+        List<PostDTO> posts = boardService.getPostsByMember(member);
+        return ResponseEntity.ok(posts);
+    }
 }

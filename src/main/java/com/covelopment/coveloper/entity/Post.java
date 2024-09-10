@@ -13,6 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Post {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -34,7 +35,15 @@ public class Post {
     private List<Vote> votes;
 
     private int upvoteCount = 0;
-    private int downvoteCount = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private BoardType boardType;  // 게시판 유형
+
+    // 구인 게시판 전용 필드
+    private String projectType;
+    private int teamSize;
+    private int currentMembers;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -49,5 +58,4 @@ public class Post {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
 }
