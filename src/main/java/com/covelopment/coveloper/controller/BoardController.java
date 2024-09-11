@@ -11,7 +11,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/board")
@@ -67,12 +69,21 @@ public class BoardController {
 
     // QnA 게시판의 답변 채택 기능
     @PostMapping("/post/{postId}/select-answer/{commentId}")
-    public ResponseEntity<Void> selectAnswer(@PathVariable("postId") Long postId, @PathVariable Long commentId, HttpServletRequest request) {
+    public ResponseEntity<Map<String, Object>> selectAnswer(@PathVariable("postId") Long postId, @PathVariable Long commentId, HttpServletRequest request) {
         String token = tokenUtil.extractToken(request);
         String email = tokenUtil.getEmailFromToken(token);
         Member member = memberService.findByEmail(email);
+
+        // 답변 채택 로직 실행
         boardService.selectAnswer(postId, commentId, member);
-        return ResponseEntity.ok().build();
+
+        // 응답 데이터 생성
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Answer selected successfully");
+        response.put("commentId", commentId);
+
+        // 응답 반환
+        return ResponseEntity.ok(response);
     }
 
     // 댓글 기능
