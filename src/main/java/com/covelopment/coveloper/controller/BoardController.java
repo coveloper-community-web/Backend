@@ -37,7 +37,7 @@ public class BoardController {
     }
 
     @PutMapping("/post/{postId}")
-    public ResponseEntity<PostDTO> updatePost(@PathVariable Long postId, @RequestBody PostDTO postDTO, HttpServletRequest request) {
+    public ResponseEntity<PostDTO> updatePost(@PathVariable("postId") Long postId, @RequestBody PostDTO postDTO, HttpServletRequest request) {
         String token = tokenUtil.extractToken(request);
         String email = tokenUtil.getEmailFromToken(token);
         Member member = memberService.findByEmail(email);
@@ -67,7 +67,7 @@ public class BoardController {
 
     // QnA 게시판의 답변 채택 기능
     @PostMapping("/post/{postId}/select-answer/{commentId}")
-    public ResponseEntity<Void> selectAnswer(@PathVariable Long postId, @PathVariable Long commentId, HttpServletRequest request) {
+    public ResponseEntity<Void> selectAnswer(@PathVariable("postId") Long postId, @PathVariable Long commentId, HttpServletRequest request) {
         String token = tokenUtil.extractToken(request);
         String email = tokenUtil.getEmailFromToken(token);
         Member member = memberService.findByEmail(email);
@@ -77,7 +77,7 @@ public class BoardController {
 
     // 댓글 기능
     @PostMapping("/post/{postId}/comment")
-    public ResponseEntity<CommentDTO> addComment(@PathVariable Long postId, @RequestBody CommentDTO commentDTO, HttpServletRequest request) {
+    public ResponseEntity<CommentDTO> addComment(@PathVariable("postId") Long postId, @RequestBody CommentDTO commentDTO, HttpServletRequest request) {
         String token = tokenUtil.extractToken(request);
         String email = tokenUtil.getEmailFromToken(token);
         Member member = memberService.findByEmail(email);
