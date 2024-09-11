@@ -164,21 +164,23 @@ public class BoardService {
             throw new IllegalArgumentException("Only the post author can select an answer.");
         }
 
+        // 기존에 채택된 답변이 있는지 확인 (이미 채택된 답변이 있으면 오류 처리)
+        post.getComments().stream()
+                .filter(Comment::isSelected)
+                .findAny()
+                .ifPresent(c -> {
+                    throw new IllegalArgumentException("An answer has already been selected.");
+                });
+
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid comment ID"));
 
-        // 기존에 채택된 답변이 있는지 확인 (이미 채택된 답변이 있으면 오류 처리)
-        List<Comment> comments = post.getComments();
-        for (Comment c : comments) {
-            if (c.isSelected()) {
-                throw new IllegalArgumentException("An answer has already been selected.");
-            }
-        }
-
-        // 답변을 채택
+        // 답변 채택
         comment.setSelected(true);
-        commentRepository.save(comment);  // 채택된 답변 저장
+        commentRepository.save(comment);
     }
+
+
 
 
     // 댓글 생성, 조회, 수정, 삭제 로직 (이전과 동일)
@@ -187,36 +189,78 @@ public class BoardService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
 
+        // 새로운 댓글 생성
         Comment comment = new Comment();
         comment.setContent(commentDTO.getContent());
         comment.setPost(post);
         comment.setMember(member);
+        comment.setSelected(false);  // 기본값은 false
+
+        // 댓글 저장
         Comment savedComment = commentRepository.save(comment);
 
-        return new CommentDTO(savedComment.getId(), savedComment.getContent(), member.getNickname(), post.getId(), savedComment.getCreatedAt(), savedComment.getUpdatedAt());
+        // 저장된 댓글 정보를 반환
+        return new CommentDTO(
+                savedComment.getId(),
+                savedComment.getContent(),
+                member.getNickname(),
+                post.getId(),
+                savedComment.getCreatedAt(),
+                savedComment.getUpdatedAt(),
+                savedComment.isSelected()  // 채택 여부 반환
+        );
     }
 
     @Transactional(readOnly = true)
     public List<CommentDTO> getCommentsByPostId(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
+
         return post.getComments().stream()
                 .sorted(Comparator.comparing(Comment::getCreatedAt).reversed())  // 최신순 정렬
-                .map(comment -> new CommentDTO(comment.getId(), comment.getContent(), comment.getMember().getNickname(), postId, comment.getCreatedAt(), comment.getUpdatedAt()))
+                .map(comment -> new CommentDTO(
+                        comment.getId(),
+                        comment.getContent(),
+                        comment.getMember().getNickname(),
+                        postId,
+                        comment.getCreatedAt(),
+                        comment.getUpdatedAt(),
+                        comment.isSelected()  // 채택 여부 반환
+                ))
                 .collect(Collectors.toList());
     }
+
+
+
 
     @Transactional
     public CommentDTO updateComment(Long commentId, CommentDTO commentDTO, Member member) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid comment ID"));
+
+        // 작성자가 아닌 경우 예외 발생
         if (!comment.getMember().getId().equals(member.getId())) {
             throw new IllegalArgumentException("Unauthorized access.");
         }
+
+        // 댓글 내용 업데이트
         comment.setContent(commentDTO.getContent());
-        commentRepository.save(comment);
-        return new CommentDTO(comment.getId(), comment.getContent(), member.getNickname(), comment.getPost().getId(), comment.getCreatedAt(), comment.getUpdatedAt());
+
+        // 댓글 저장 (채택 여부는 유지)
+        Comment updatedComment = commentRepository.save(comment);
+
+        // 댓글 정보 반환, 기존 selected 필드 유지
+        return new CommentDTO(
+                updatedComment.getId(),
+                updatedComment.getContent(),
+                member.getNickname(),
+                updatedComment.getPost().getId(),
+                updatedComment.getCreatedAt(),
+                updatedComment.getUpdatedAt(),
+                updatedComment.isSelected()  // 채택 여부 유지
+        );
     }
+
 
     @Transactional
     public void deleteComment(Long commentId, Member member) {

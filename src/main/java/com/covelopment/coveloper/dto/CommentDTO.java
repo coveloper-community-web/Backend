@@ -16,4 +16,5 @@ public class CommentDTO {
     private Long postId;
     private LocalDateTime createdAt;  // 생성일시
     private LocalDateTime updatedAt;  // 수정일시 (수정용)
+    private boolean selected;  // 채택 여부 필드 추가
 }
