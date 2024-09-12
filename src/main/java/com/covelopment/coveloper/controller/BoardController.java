@@ -1,19 +1,18 @@
 package com.covelopment.coveloper.controller;
 
-import com.covelopment.coveloper.dto.CommentDTO;
-import com.covelopment.coveloper.dto.PostDTO;
-import com.covelopment.coveloper.dto.VoteDTO;
+import com.covelopment.coveloper.dto.*;
 import com.covelopment.coveloper.entity.Member;
 import com.covelopment.coveloper.service.BoardService;
 import com.covelopment.coveloper.service.MemberService;
+import com.covelopment.coveloper.util.ApiConstants;
 import com.covelopment.coveloper.util.TokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
+import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/board")
@@ -29,20 +28,22 @@ public class BoardController {
         this.tokenUtil = tokenUtil;
     }
 
-    @PostMapping("/post")
-    public ResponseEntity<PostDTO> createPost(@RequestBody PostDTO postDTO, HttpServletRequest request) {
+    private Member getAuthenticatedMember(HttpServletRequest request) {
         String token = tokenUtil.extractToken(request);
         String email = tokenUtil.getEmailFromToken(token);
-        Member member = memberService.findByEmail(email);
+        return memberService.findByEmail(email);
+    }
+
+    @PostMapping("/post")
+    public ResponseEntity<PostDTO> createPost(@Valid @RequestBody PostDTO postDTO, HttpServletRequest request) {
+        Member member = getAuthenticatedMember(request);
         PostDTO createdPost = boardService.createPost(postDTO, member);
-        return ResponseEntity.status(201).body(createdPost);  // 201 Created로 응답
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
     }
 
     @PutMapping("/post/{postId}")
-    public ResponseEntity<PostDTO> updatePost(@PathVariable("postId") Long postId, @RequestBody PostDTO postDTO, HttpServletRequest request) {
-        String token = tokenUtil.extractToken(request);
-        String email = tokenUtil.getEmailFromToken(token);
-        Member member = memberService.findByEmail(email);
+    public ResponseEntity<PostDTO> updatePost(@PathVariable("postId") Long postId, @Valid @RequestBody PostDTO postDTO, HttpServletRequest request) {
+        Member member = getAuthenticatedMember(request);
         PostDTO updatedPost = boardService.updatePost(postId, postDTO, member);
         return ResponseEntity.ok(updatedPost);
     }
@@ -59,41 +60,28 @@ public class BoardController {
     }
 
     @DeleteMapping("/post/{postId}")
-    public ResponseEntity<Void> deletePost(@PathVariable Long postId, HttpServletRequest request) {
-        String token = tokenUtil.extractToken(request);
-        String email = tokenUtil.getEmailFromToken(token);
-        Member member = memberService.findByEmail(email);
+    public ResponseEntity<ApiResponse> deletePost(@PathVariable Long postId, HttpServletRequest request) {
+        Member member = getAuthenticatedMember(request);
         boardService.deletePost(postId, member);
-        return ResponseEntity.noContent().build();  // 204 No Content로 응답
+        ApiResponse response = new ApiResponse(ApiConstants.POST_DELETED, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     // QnA 게시판의 답변 채택 기능
     @PostMapping("/post/{postId}/select-answer/{commentId}")
-    public ResponseEntity<Map<String, Object>> selectAnswer(@PathVariable("postId") Long postId, @PathVariable Long commentId, HttpServletRequest request) {
-        String token = tokenUtil.extractToken(request);
-        String email = tokenUtil.getEmailFromToken(token);
-        Member member = memberService.findByEmail(email);
-
-        // 답변 채택 로직 실행
+    public ResponseEntity<ApiResponse> selectAnswer(@PathVariable("postId") Long postId, @PathVariable Long commentId, HttpServletRequest request) {
+        Member member = getAuthenticatedMember(request);
         boardService.selectAnswer(postId, commentId, member);
-
-        // 응답 데이터 생성
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Answer selected successfully");
-        response.put("commentId", commentId);
-
-        // 응답 반환
+        ApiResponse response = new ApiResponse(ApiConstants.ANSWER_SELECTED, HttpStatus.OK);
         return ResponseEntity.ok(response);
     }
 
-    // 댓글 기능
+    // 댓글 생성
     @PostMapping("/post/{postId}/comment")
-    public ResponseEntity<CommentDTO> addComment(@PathVariable("postId") Long postId, @RequestBody CommentDTO commentDTO, HttpServletRequest request) {
-        String token = tokenUtil.extractToken(request);
-        String email = tokenUtil.getEmailFromToken(token);
-        Member member = memberService.findByEmail(email);
+    public ResponseEntity<CommentDTO> addComment(@PathVariable("postId") Long postId, @Valid @RequestBody CommentDTO commentDTO, HttpServletRequest request) {
+        Member member = getAuthenticatedMember(request);
         CommentDTO createdComment = boardService.addComment(postId, commentDTO, member);
-        return ResponseEntity.status(201).body(createdComment);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdComment);
     }
 
     @GetMapping("/post/{postId}/comments")
@@ -102,35 +90,28 @@ public class BoardController {
         return ResponseEntity.ok(comments);
     }
 
-
+    // 댓글 수정
     @PutMapping("/comment/{commentId}")
-    public ResponseEntity<CommentDTO> updateComment(@PathVariable("commentId") Long commentId, @RequestBody CommentDTO commentDTO, HttpServletRequest request) {
-        String token = tokenUtil.extractToken(request);
-        String email = tokenUtil.getEmailFromToken(token);
-        Member member = memberService.findByEmail(email);
+    public ResponseEntity<CommentDTO> updateComment(@PathVariable("commentId") Long commentId, @Valid @RequestBody CommentDTO commentDTO, HttpServletRequest request) {
+        Member member = getAuthenticatedMember(request);
         CommentDTO updatedComment = boardService.updateComment(commentId, commentDTO, member);
         return ResponseEntity.ok(updatedComment);
     }
 
-
+    // 댓글 삭제
     @DeleteMapping("/comment/{commentId}")
-    public ResponseEntity<Void> deleteComment(@PathVariable("commentId") Long commentId, HttpServletRequest request) {
-        String token = tokenUtil.extractToken(request);
-        String email = tokenUtil.getEmailFromToken(token);
-        Member member = memberService.findByEmail(email);
+    public ResponseEntity<ApiResponse> deleteComment(@PathVariable("commentId") Long commentId, HttpServletRequest request) {
+        Member member = getAuthenticatedMember(request);
         boardService.deleteComment(commentId, member);
-        return ResponseEntity.noContent().build();
+        ApiResponse response = new ApiResponse(ApiConstants.COMMENT_DELETED, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 
     // 게시글 추천/비추천 기능
     @PostMapping("/post/{postId}/vote")
     public ResponseEntity<VoteDTO> voteOnPost(@PathVariable("postId") Long postId, HttpServletRequest request) {
-        String token = tokenUtil.extractToken(request);
-        String email = tokenUtil.getEmailFromToken(token);
-        Member member = memberService.findByEmail(email);
+        Member member = getAuthenticatedMember(request);
         VoteDTO result = boardService.voteOnPost(postId, member);
-        return ResponseEntity.status(201).body(result);  // 201 Created로 응답
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
-
-
 }

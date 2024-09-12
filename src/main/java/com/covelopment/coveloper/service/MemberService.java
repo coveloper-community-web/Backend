@@ -1,4 +1,3 @@
-// MemberService.java
 package com.covelopment.coveloper.service;
 
 import com.covelopment.coveloper.dto.MemberDTO;
@@ -51,12 +50,8 @@ public class MemberService {
         return jwtTokenProvider.createToken(email);
     }
 
-
     public Member findByEmail(String email) {
         return memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
     }
-
-
-
 }
