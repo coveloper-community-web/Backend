@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -45,6 +46,15 @@ public class Post {
     private int teamSize;
     private int currentMembers;
 
+    // 팀원 필드 추가 (Many-to-Many 관계 설정)
+    @ManyToMany
+    @JoinTable(
+            name = "post_team_members",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "member_id")
+    )
+    private List<Member> teamMembers = new ArrayList<>();  // 팀원 목록
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -57,5 +67,18 @@ public class Post {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    // 팀원 추가 메서드
+    public void addTeamMember(Member member) {
+        if (!teamMembers.contains(member)) {
+            teamMembers.add(member);
+            currentMembers++;  // 현재 팀원 수 증가
+        }
+    }
+
+    // 팀원 목록 반환 메서드
+    public List<Member> getTeamMembers() {
+        return teamMembers;
     }
 }

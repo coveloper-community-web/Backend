@@ -22,11 +22,21 @@ public class BoardService {
     private final CommentRepository commentRepository;
     private final VoteRepository voteRepository;
 
+
     public BoardService(PostRepository postRepository, CommentRepository commentRepository, VoteRepository voteRepository) {
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.voteRepository = voteRepository;
     }
+
+    private void handleRecruitmentFields(PostDTO postDTO, Post post) {
+        if (post.getBoardType() == BoardType.RECRUITMENT) {
+            post.setProjectType(postDTO.getProjectType());
+            post.setTeamSize(postDTO.getTeamSize());
+            post.setCurrentMembers(postDTO.getCurrentMembers());
+        }
+    }
+
 
     @Transactional
     public PostDTO createPost(PostDTO postDTO, Member member) {
@@ -36,12 +46,7 @@ public class BoardService {
         post.setMember(member);
         post.setBoardType(postDTO.getBoardType());
 
-        // 구인 게시판 전용 필드
-        if (post.getBoardType() == BoardType.RECRUITMENT) {
-            post.setProjectType(postDTO.getProjectType());
-            post.setTeamSize(postDTO.getTeamSize());
-            post.setCurrentMembers(postDTO.getCurrentMembers());
-        }
+        handleRecruitmentFields(postDTO, post);
 
         Post savedPost = postRepository.save(post);
 
@@ -63,12 +68,7 @@ public class BoardService {
         post.setTitle(postDTO.getTitle());
         post.setContent(postDTO.getContent());
 
-        // 구인 게시판 전용 필드 업데이트
-        if (post.getBoardType() == BoardType.RECRUITMENT) {
-            post.setProjectType(postDTO.getProjectType());
-            post.setTeamSize(postDTO.getTeamSize());
-            post.setCurrentMembers(postDTO.getCurrentMembers());
-        }
+        handleRecruitmentFields(postDTO, post);
 
         Post updatedPost = postRepository.save(post);
 
@@ -77,6 +77,7 @@ public class BoardService {
                 updatedPost.getUpdatedAt(), updatedPost.getBoardType(),
                 updatedPost.getProjectType(), updatedPost.getTeamSize(), updatedPost.getCurrentMembers());
     }
+
 
     @Transactional(readOnly = true)
     public PostDTO getPostById(Long postId) {
@@ -237,4 +238,59 @@ public class BoardService {
                         post.getTeamSize(), post.getCurrentMembers()))
                 .collect(Collectors.toList());
     }
+
+// Team
+
+    @Transactional
+    public void addTeamMember(Long postId, Long commentId, Member teamLeader) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
+
+        // 팀장 여부 확인
+        if (!post.getMember().equals(teamLeader)) {
+            throw new IllegalArgumentException("Only the team leader can add members.");
+        }
+
+        // 댓글 작성자 조회
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid comment ID"));
+
+        Member newTeamMember = comment.getMember();  // 댓글 작성자를 팀원으로 추가
+        post.addTeamMember(newTeamMember);  // 팀원 추가
+        postRepository.save(post);  // 업데이트된 게시글 저장
+    }
+
+    // 사용자가 속한 팀 목록 반환
+    @Transactional(readOnly = true)
+    public List<PostDTO> getPostsByMemberTeams(Member member) {
+        List<Post> teamPosts = postRepository.findByTeamMembersContaining(member);
+        return teamPosts.stream()
+                .map(post -> new PostDTO(post.getId(), post.getTitle(), post.getContent(),
+                        post.getMember().getNickname(), post.getUpvoteCount(),
+                        post.getCreatedAt(), post.getUpdatedAt(),
+                        post.getBoardType(), post.getProjectType(),
+                        post.getTeamSize(), post.getCurrentMembers()))
+                .collect(Collectors.toList());
+    }
+
+    // 특정 팀 게시판 조회
+    @Transactional(readOnly = true)
+    public List<PostDTO> getPostsForSpecificTeam(Long teamId, Member member) {
+        Post teamPost = postRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid team ID"));
+
+        if (!teamPost.getTeamMembers().contains(member)) {
+            throw new IllegalArgumentException("You are not a member of this team.");
+        }
+
+        return postRepository.findByTeamMembersContaining(member).stream()
+                .filter(post -> post.getId().equals(teamId))
+                .map(post -> new PostDTO(post.getId(), post.getTitle(), post.getContent(),
+                        post.getMember().getNickname(), post.getUpvoteCount(),
+                        post.getCreatedAt(), post.getUpdatedAt(),
+                        post.getBoardType(), post.getProjectType(),
+                        post.getTeamSize(), post.getCurrentMembers()))
+                .collect(Collectors.toList());
+    }
+
 }

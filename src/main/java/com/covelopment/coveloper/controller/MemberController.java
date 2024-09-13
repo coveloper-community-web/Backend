@@ -28,6 +28,11 @@ public class MemberController {
         this.boardService = boardService;
         this.tokenUtil = tokenUtil;
     }
+    private Member getAuthenticatedMember(HttpServletRequest request) {
+        String token = tokenUtil.extractToken(request);
+        String email = tokenUtil.getEmailFromToken(token);
+        return memberService.findByEmail(email);
+    }
 
     @PostMapping("/register")
     public ResponseEntity<Member> registerMember(@Validated @RequestBody MemberDTO memberDTO) {
@@ -63,4 +68,14 @@ public class MemberController {
         List<PostDTO> posts = boardService.getPostsByMember(member);
         return ResponseEntity.ok(posts);
     }
+
+    // 팀 목록 조회 API (사용자가 속한 팀 목록을 반환)
+    @GetMapping("/teams")
+    public ResponseEntity<List<PostDTO>> getMyTeams(HttpServletRequest request) {
+        Member member = getAuthenticatedMember(request);
+        List<PostDTO> teamPosts = boardService.getPostsByMemberTeams(member);
+        return ResponseEntity.ok(teamPosts);
+    }
+
+
 }

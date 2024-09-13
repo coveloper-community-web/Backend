@@ -114,4 +114,21 @@ public class BoardController {
         VoteDTO result = boardService.voteOnPost(postId, member);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
+
+    // 팀장인 사용자가 댓글 작성자를 팀원으로 추가
+    @PostMapping("/post/{postId}/add-member/{commentId}")
+    public ResponseEntity<Void> addTeamMember(@PathVariable("postId") Long postId, @PathVariable Long commentId, HttpServletRequest request) {
+        Member teamLeader = getAuthenticatedMember(request);  // 팀장 확인
+        boardService.addTeamMember(postId, commentId, teamLeader);  // 팀원 추가 로직 호출
+        return ResponseEntity.ok().build();
+    }
+
+    // 특정 팀의 협업 게시판 조회
+    @GetMapping("/team/{teamId}/posts")
+    public ResponseEntity<List<PostDTO>> getTeamPosts(@PathVariable Long teamId, HttpServletRequest request) {
+        Member member = getAuthenticatedMember(request);
+        List<PostDTO> posts = boardService.getPostsForSpecificTeam(teamId, member);
+        return ResponseEntity.ok(posts);
+    }
+
 }
