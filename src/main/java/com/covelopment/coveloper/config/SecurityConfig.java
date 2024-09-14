@@ -31,7 +31,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // REST API에서는 CSRF 비활성화
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers("/api/members/**").permitAll() // 로그인, 회원가입 등은 인증 없이 접근 가능
+                        .requestMatchers("/api/members/**", "/api/chatbot/**").permitAll() // 로그인, 회원가입 등은 인증 없이 접근 가능
                         .anyRequest().authenticated() // 그 외의 요청은 인증 필요
                 )
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class); // JWT 필터 추가
