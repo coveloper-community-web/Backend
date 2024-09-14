@@ -1,9 +1,12 @@
 package com.covelopment.coveloper.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Entity
 @Data
@@ -31,4 +34,8 @@ public class Member {
 
     @Column(nullable = false)
     private String track2;
+
+    @ManyToMany(mappedBy = "teamMembers")
+    @JsonIgnore
+    private List<Post> teams;  // 사용자가 속한 팀 리스트 (구인 게시글)
 }

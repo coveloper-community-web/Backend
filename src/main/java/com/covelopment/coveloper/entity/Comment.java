@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+// Comment.java
 @Entity
 @Data
 @NoArgsConstructor
@@ -19,7 +20,7 @@ public class Comment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
-    @JsonIgnore  // 순환 참조 방지를 위해 추가
+    @JsonIgnore
     private Post post;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -30,9 +31,18 @@ public class Comment {
     private String content;
 
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    private boolean isSelected = false;  // QnA 게시판 답변 채택 여부 추가
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -13,6 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Post {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -34,7 +36,24 @@ public class Post {
     private List<Vote> votes;
 
     private int upvoteCount = 0;
-    private int downvoteCount = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private BoardType boardType;  // 게시판 유형
+
+    // 구인 게시판 전용 필드
+    private String projectType;
+    private int teamSize;
+    private int currentMembers;
+
+    // 팀원 필드 추가 (Many-to-Many 관계 설정)
+    @ManyToMany
+    @JoinTable(
+            name = "post_team_members",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "member_id")
+    )
+    private List<Member> teamMembers = new ArrayList<>();  // 팀원 목록
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -50,4 +69,16 @@ public class Post {
         updatedAt = LocalDateTime.now();
     }
 
+    // 팀원 추가 메서드
+    public void addTeamMember(Member member) {
+        if (!teamMembers.contains(member)) {
+            teamMembers.add(member);
+            currentMembers++;  // 현재 팀원 수 증가
+        }
+    }
+
+    // 팀원 목록 반환 메서드
+    public List<Member> getTeamMembers() {
+        return teamMembers;
+    }
 }
