@@ -37,23 +37,28 @@ public class BoardService {
         }
     }
 
-
     @Transactional
     public PostDTO createPost(PostDTO postDTO, Member member) {
         Post post = new Post();
         post.setTitle(postDTO.getTitle());
         post.setContent(postDTO.getContent());
-        post.setMember(member);
+        post.setMember(member);  // 글 작성자
         post.setBoardType(postDTO.getBoardType());
 
-        handleRecruitmentFields(postDTO, post);
+        // 구인 게시판일 때만 작성자를 팀장으로 추가
+        if (post.getBoardType() == BoardType.RECRUITMENT) {
+            post.addTeamLeader(member);  // 작성자를 팀장으로 설정하고 팀원으로 추가
+        }
+
+        handleRecruitmentFields(postDTO, post);  // 구인 게시판 전용 필드 설정
 
         Post savedPost = postRepository.save(post);
 
         return new PostDTO(savedPost.getId(), savedPost.getTitle(), savedPost.getContent(),
                 member.getNickname(), savedPost.getUpvoteCount(), savedPost.getCreatedAt(),
                 savedPost.getUpdatedAt(), savedPost.getBoardType(),
-                savedPost.getProjectType(), savedPost.getTeamSize(), savedPost.getCurrentMembers());
+                savedPost.getProjectType(), savedPost.getTeamSize(), savedPost.getCurrentMembers(),
+                post.getMember().getName());  // teamLeaderName 필드 추가
     }
 
     @Transactional
@@ -75,9 +80,9 @@ public class BoardService {
         return new PostDTO(updatedPost.getId(), updatedPost.getTitle(), updatedPost.getContent(),
                 member.getNickname(), updatedPost.getUpvoteCount(), updatedPost.getCreatedAt(),
                 updatedPost.getUpdatedAt(), updatedPost.getBoardType(),
-                updatedPost.getProjectType(), updatedPost.getTeamSize(), updatedPost.getCurrentMembers());
+                updatedPost.getProjectType(), updatedPost.getTeamSize(), updatedPost.getCurrentMembers(),
+                post.getMember().getName());  // teamLeaderName 필드 추가
     }
-
 
     @Transactional(readOnly = true)
     public PostDTO getPostById(Long postId) {
@@ -88,7 +93,8 @@ public class BoardService {
                 post.getMember().getNickname(), post.getUpvoteCount(),
                 post.getCreatedAt(), post.getUpdatedAt(),
                 post.getBoardType(), post.getProjectType(),
-                post.getTeamSize(), post.getCurrentMembers());
+                post.getTeamSize(), post.getCurrentMembers(),
+                post.getMember().getName());  // teamLeaderName 필드 추가
     }
 
     @Transactional(readOnly = true)
@@ -98,7 +104,8 @@ public class BoardService {
                         post.getMember().getNickname(), post.getUpvoteCount(),
                         post.getCreatedAt(), post.getUpdatedAt(),
                         post.getBoardType(), post.getProjectType(),
-                        post.getTeamSize(), post.getCurrentMembers()))
+                        post.getTeamSize(), post.getCurrentMembers(),
+                        post.getMember().getName()))  // teamLeaderName 필드 추가
                 .collect(Collectors.toList());
     }
 
@@ -235,19 +242,25 @@ public class BoardService {
                         post.getMember().getNickname(), post.getUpvoteCount(),
                         post.getCreatedAt(), post.getUpdatedAt(),
                         post.getBoardType(), post.getProjectType(),
-                        post.getTeamSize(), post.getCurrentMembers()))
+                        post.getTeamSize(), post.getCurrentMembers(),
+                        post.getMember().getName()))  // teamLeaderName 필드 추가
                 .collect(Collectors.toList());
     }
 
-// Team
+    // Team
 
     @Transactional
     public void addTeamMember(Long postId, Long commentId, Member teamLeader) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
 
+        // 구인 게시판에서만 팀원을 추가 가능
+        if (post.getBoardType() != BoardType.RECRUITMENT) {
+            throw new IllegalArgumentException("Team members can only be added in recruitment posts.");
+        }
+
         // 팀장 여부 확인
-        if (!post.getMember().equals(teamLeader)) {
+        if (!post.getTeamLeader().equals(teamLeader)) {
             throw new IllegalArgumentException("Only the team leader can add members.");
         }
 
@@ -269,7 +282,8 @@ public class BoardService {
                         post.getMember().getNickname(), post.getUpvoteCount(),
                         post.getCreatedAt(), post.getUpdatedAt(),
                         post.getBoardType(), post.getProjectType(),
-                        post.getTeamSize(), post.getCurrentMembers()))
+                        post.getTeamSize(), post.getCurrentMembers(),
+                        post.getMember().getName()))  // teamLeaderName 필드 추가
                 .collect(Collectors.toList());
     }
 
@@ -289,8 +303,8 @@ public class BoardService {
                         post.getMember().getNickname(), post.getUpvoteCount(),
                         post.getCreatedAt(), post.getUpdatedAt(),
                         post.getBoardType(), post.getProjectType(),
-                        post.getTeamSize(), post.getCurrentMembers()))
+                        post.getTeamSize(), post.getCurrentMembers(),
+                        post.getMember().getName()))  // teamLeaderName 필드 추가
                 .collect(Collectors.toList());
     }
-
 }

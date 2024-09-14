@@ -23,6 +23,10 @@ public class Post {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_leader_id", nullable = false)
+    private Member teamLeader;  // 팀장 (글 작성자)
+
     @Column(nullable = false)
     private String title;
 
@@ -67,6 +71,14 @@ public class Post {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    // 글 작성 시 작성자를 팀장과 팀원으로 추가
+    public void addTeamLeader(Member teamLeader) {
+        if (!teamMembers.contains(teamLeader)) {
+            this.teamLeader = teamLeader;
+            teamMembers.add(teamLeader);  // 팀장도 팀원으로 추가
+        }
     }
 
     // 팀원 추가 메서드

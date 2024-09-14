@@ -25,4 +25,6 @@ public class PostDTO {
     private String projectType;
     private int teamSize;
     private int currentMembers;
+
+    private String teamLeaderName;
 }
