@@ -54,11 +54,20 @@ public class BoardService {
 
         Post savedPost = postRepository.save(post);
 
-        return new PostDTO(savedPost.getId(), savedPost.getTitle(), savedPost.getContent(),
-                member.getNickname(), savedPost.getUpvoteCount(), savedPost.getCreatedAt(),
-                savedPost.getUpdatedAt(), savedPost.getBoardType(),
-                savedPost.getProjectType(), savedPost.getTeamSize(), savedPost.getCurrentMembers(),
-                post.getMember().getName());  // teamLeaderName 필드 추가
+        return new PostDTO(
+                savedPost.getId(),
+                savedPost.getTitle(),
+                savedPost.getContent(),
+                member.getNickname(),
+                savedPost.getUpvoteCount(),
+                savedPost.getCreatedAt(),
+                savedPost.getUpdatedAt(),
+                savedPost.getBoardType(),
+                savedPost.getProjectType(),
+                savedPost.getTeamSize(),
+                savedPost.getCurrentMembers(),
+                savedPost.getTeamLeader() != null ? savedPost.getTeamLeader().getName() : null  // teamLeader가 null일 경우 처리
+        );
     }
 
     @Transactional
@@ -77,11 +86,20 @@ public class BoardService {
 
         Post updatedPost = postRepository.save(post);
 
-        return new PostDTO(updatedPost.getId(), updatedPost.getTitle(), updatedPost.getContent(),
-                member.getNickname(), updatedPost.getUpvoteCount(), updatedPost.getCreatedAt(),
-                updatedPost.getUpdatedAt(), updatedPost.getBoardType(),
-                updatedPost.getProjectType(), updatedPost.getTeamSize(), updatedPost.getCurrentMembers(),
-                post.getMember().getName());  // teamLeaderName 필드 추가
+        return new PostDTO(
+                updatedPost.getId(),
+                updatedPost.getTitle(),
+                updatedPost.getContent(),
+                member.getNickname(),
+                updatedPost.getUpvoteCount(),
+                updatedPost.getCreatedAt(),
+                updatedPost.getUpdatedAt(),
+                updatedPost.getBoardType(),
+                updatedPost.getProjectType(),
+                updatedPost.getTeamSize(),
+                updatedPost.getCurrentMembers(),
+                updatedPost.getTeamLeader() != null ? updatedPost.getTeamLeader().getName() : null  // teamLeader가 null일 경우 처리
+        );
     }
 
     @Transactional(readOnly = true)
@@ -89,23 +107,39 @@ public class BoardService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
 
-        return new PostDTO(post.getId(), post.getTitle(), post.getContent(),
-                post.getMember().getNickname(), post.getUpvoteCount(),
-                post.getCreatedAt(), post.getUpdatedAt(),
-                post.getBoardType(), post.getProjectType(),
-                post.getTeamSize(), post.getCurrentMembers(),
-                post.getMember().getName());  // teamLeaderName 필드 추가
+        return new PostDTO(
+                post.getId(),
+                post.getTitle(),
+                post.getContent(),
+                post.getMember().getNickname(),
+                post.getUpvoteCount(),
+                post.getCreatedAt(),
+                post.getUpdatedAt(),
+                post.getBoardType(),
+                post.getProjectType(),
+                post.getTeamSize(),
+                post.getCurrentMembers(),
+                post.getTeamLeader() != null ? post.getTeamLeader().getName() : null  // teamLeader가 null일 경우 처리
+        );
     }
 
     @Transactional(readOnly = true)
     public List<PostDTO> getAllPosts() {
         return postRepository.findAll().stream()
-                .map(post -> new PostDTO(post.getId(), post.getTitle(), post.getContent(),
-                        post.getMember().getNickname(), post.getUpvoteCount(),
-                        post.getCreatedAt(), post.getUpdatedAt(),
-                        post.getBoardType(), post.getProjectType(),
-                        post.getTeamSize(), post.getCurrentMembers(),
-                        post.getMember().getName()))  // teamLeaderName 필드 추가
+                .map(post -> new PostDTO(
+                        post.getId(),
+                        post.getTitle(),
+                        post.getContent(),
+                        post.getMember().getNickname(),
+                        post.getUpvoteCount(),
+                        post.getCreatedAt(),
+                        post.getUpdatedAt(),
+                        post.getBoardType(),
+                        post.getProjectType(),
+                        post.getTeamSize(),
+                        post.getCurrentMembers(),
+                        post.getTeamLeader() != null ? post.getTeamLeader().getName() : null  // teamLeader가 null일 경우 처리
+                ))
                 .collect(Collectors.toList());
     }
 
