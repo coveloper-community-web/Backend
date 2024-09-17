@@ -1,6 +1,7 @@
 package com.covelopment.coveloper.service;
 
 import com.covelopment.coveloper.dto.CommentDTO;
+import com.covelopment.coveloper.dto.MemberDTO;
 import com.covelopment.coveloper.dto.PostDTO;
 import com.covelopment.coveloper.dto.VoteDTO;
 import com.covelopment.coveloper.entity.*;
@@ -306,6 +307,28 @@ public class BoardService {
         post.addTeamMember(newTeamMember);  // 팀원 추가
         postRepository.save(post);  // 업데이트된 게시글 저장
     }
+
+    @Transactional(readOnly = true)
+    public List<MemberDTO> getTeamMembers(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
+
+        // 해당 게시글에 속한 팀원 목록을 반환
+        List<Member> teamMembers = post.getTeamMembers();
+
+        // 팀원 정보를 MemberDTO로 변환하여 반환
+        return teamMembers.stream()
+                .map(m -> new MemberDTO(
+                        m.getEmail(),
+                        null, // 비밀번호는 포함하지 않음
+                        m.getNickname(),
+                        m.getName(),
+                        m.getTrack1(),
+                        m.getTrack2()
+                ))
+                .collect(Collectors.toList());
+    }
+
 
     // 사용자가 속한 팀 목록 반환
     @Transactional(readOnly = true)

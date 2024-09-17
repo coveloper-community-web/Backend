@@ -123,6 +123,13 @@ public class BoardController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/post/{postId}/team-members")
+    public ResponseEntity<List<MemberDTO>> getTeamMembers(@PathVariable("postId") Long postId) {
+        List<MemberDTO> teamMembers = boardService.getTeamMembers(postId);
+        return ResponseEntity.ok(teamMembers);
+    }
+
+
     // 특정 팀의 협업 게시판 조회
     @GetMapping("/team/{teamId}/posts")
     public ResponseEntity<List<PostDTO>> getTeamPosts(@PathVariable Long teamId, HttpServletRequest request) {
