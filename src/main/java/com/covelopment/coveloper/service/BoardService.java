@@ -309,9 +309,14 @@ public class BoardService {
     }
 
     @Transactional(readOnly = true)
-    public List<MemberDTO> getTeamMembers(Long postId) {
+    public List<MemberDTO> getTeamMembers(Long postId, Member authenticatedMember) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
+
+        // 인증된 사용자가 해당 팀에 속한 멤버인지 확인
+        if (!post.getTeamMembers().contains(authenticatedMember)) {
+            throw new IllegalArgumentException("You are not authorized to view this team's members.");
+        }
 
         // 해당 게시글에 속한 팀원 목록을 반환
         List<Member> teamMembers = post.getTeamMembers();
@@ -328,6 +333,7 @@ public class BoardService {
                 ))
                 .collect(Collectors.toList());
     }
+
 
 
     // 사용자가 속한 팀 목록 반환
