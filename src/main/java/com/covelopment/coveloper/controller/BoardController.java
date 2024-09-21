@@ -123,6 +123,17 @@ public class BoardController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/post/{postId}/team-members")
+    public ResponseEntity<List<MemberDTO>> getTeamMembers(@PathVariable("postId") Long postId, HttpServletRequest request) {
+        // 요청으로부터 인증된 사용자를 가져옴
+        Member authenticatedMember = getAuthenticatedMember(request);
+
+        // 인증된 사용자가 해당 팀에 속한 멤버인지 확인하고, 팀원 목록을 가져옴
+        List<MemberDTO> teamMembers = boardService.getTeamMembers(postId, authenticatedMember);
+
+        return ResponseEntity.ok(teamMembers);
+    }
+
     // 특정 팀의 협업 게시판 조회
     @GetMapping("/team/{teamId}/posts")
     public ResponseEntity<List<PostDTO>> getTeamPosts(@PathVariable Long teamId, HttpServletRequest request) {
@@ -131,4 +142,24 @@ public class BoardController {
         return ResponseEntity.ok(posts);
     }
 
+    // 팀의 위키글 조회
+    @GetMapping("/team/{teamId}/wiki")
+    public ResponseEntity<WikiPostDTO> getTeamWiki(@PathVariable Long teamId, HttpServletRequest request) {
+        Member member = getAuthenticatedMember(request);
+        WikiPostDTO wikiPost = boardService.getWikiForTeam(teamId, member);
+        return ResponseEntity.ok(wikiPost);
+    }
+
+    // 팀의 위키글 수정
+    @PutMapping("/team/{teamId}/wiki")
+    public ResponseEntity<WikiPostDTO> updateTeamWiki(
+            @PathVariable Long teamId,
+            @Valid @RequestBody WikiPostDTO wikiPostDTO,
+            HttpServletRequest request) {
+
+        Member member = getAuthenticatedMember(request);
+        WikiPostDTO updatedWikiPost = boardService.updateWikiForTeam(teamId, wikiPostDTO, member);
+
+        return ResponseEntity.ok(updatedWikiPost);
+    }
 }
