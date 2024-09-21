@@ -59,6 +59,10 @@ public class Post {
     )
     private List<Member> teamMembers = new ArrayList<>();  // 팀원 목록
 
+    // 팀당 하나의 위키 글
+    @OneToOne(mappedBy = "teamPost", cascade = CascadeType.ALL, orphanRemoval = true)
+    private WikiPost wikiPost;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -92,5 +96,10 @@ public class Post {
     // 팀원 목록 반환 메서드
     public List<Member> getTeamMembers() {
         return teamMembers;
+    }
+
+    // 위키 글 추가 메서드
+    public void addWikiPost(WikiPost wikiPost) {
+        this.wikiPost = wikiPost;
     }
 }

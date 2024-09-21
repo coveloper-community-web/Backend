@@ -134,9 +134,6 @@ public class BoardController {
         return ResponseEntity.ok(teamMembers);
     }
 
-
-
-
     // 특정 팀의 협업 게시판 조회
     @GetMapping("/team/{teamId}/posts")
     public ResponseEntity<List<PostDTO>> getTeamPosts(@PathVariable Long teamId, HttpServletRequest request) {
@@ -145,4 +142,24 @@ public class BoardController {
         return ResponseEntity.ok(posts);
     }
 
+    // 팀의 위키글 조회
+    @GetMapping("/team/{teamId}/wiki")
+    public ResponseEntity<WikiPostDTO> getTeamWiki(@PathVariable Long teamId, HttpServletRequest request) {
+        Member member = getAuthenticatedMember(request);
+        WikiPostDTO wikiPost = boardService.getWikiForTeam(teamId, member);
+        return ResponseEntity.ok(wikiPost);
+    }
+
+    // 팀의 위키글 수정
+    @PutMapping("/team/{teamId}/wiki")
+    public ResponseEntity<WikiPostDTO> updateTeamWiki(
+            @PathVariable Long teamId,
+            @Valid @RequestBody WikiPostDTO wikiPostDTO,
+            HttpServletRequest request) {
+
+        Member member = getAuthenticatedMember(request);
+        WikiPostDTO updatedWikiPost = boardService.updateWikiForTeam(teamId, wikiPostDTO, member);
+
+        return ResponseEntity.ok(updatedWikiPost);
+    }
 }
