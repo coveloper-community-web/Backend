@@ -23,6 +23,10 @@ public class Post {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_leader_id", nullable = true) // nullable 설정
+    private Member teamLeader;  // 팀장 (글 작성자)
+
     @Column(nullable = false)
     private String title;
 
@@ -44,7 +48,7 @@ public class Post {
     // 구인 게시판 전용 필드
     private String projectType;
     private int teamSize;
-    private int currentMembers;
+    private int currentMembers = 0; // 명시적으로 0으로 초기화
 
     // 팀원 필드 추가 (Many-to-Many 관계 설정)
     @ManyToMany
@@ -54,6 +58,10 @@ public class Post {
             inverseJoinColumns = @JoinColumn(name = "member_id")
     )
     private List<Member> teamMembers = new ArrayList<>();  // 팀원 목록
+
+    // 팀당 하나의 위키 글
+    @OneToOne(mappedBy = "teamPost", cascade = CascadeType.ALL, orphanRemoval = true)
+    private WikiPost wikiPost;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -69,7 +77,15 @@ public class Post {
         updatedAt = LocalDateTime.now();
     }
 
-    // 팀원 추가 메서드
+    // 글 작성 시 작성자를 팀장과 팀원으로 추가 (구인 게시판에서만 적용)
+    public void addTeamLeader(Member teamLeader) {
+        if (!teamMembers.contains(teamLeader)) {
+            this.teamLeader = teamLeader;
+            teamMembers.add(teamLeader);  // 팀장도 팀원으로 추가
+        }
+    }
+
+    // 팀원 추가 메서드 (구인 게시판에서만 적용)
     public void addTeamMember(Member member) {
         if (!teamMembers.contains(member)) {
             teamMembers.add(member);
@@ -80,5 +96,10 @@ public class Post {
     // 팀원 목록 반환 메서드
     public List<Member> getTeamMembers() {
         return teamMembers;
+    }
+
+    // 위키 글 추가 메서드
+    public void addWikiPost(WikiPost wikiPost) {
+        this.wikiPost = wikiPost;
     }
 }
