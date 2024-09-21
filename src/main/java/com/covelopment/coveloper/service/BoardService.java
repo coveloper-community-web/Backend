@@ -46,22 +46,22 @@ public class BoardService {
         post.setMember(member);
         post.setBoardType(postDTO.getBoardType());
 
+        // 구인 게시판일 경우 팀장 설정 및 팀 위키 생성
         if (post.getBoardType() == BoardType.RECRUITMENT) {
             post.addTeamLeader(member);
-
-            // 위키 글 자동 생성
-            WikiPost wikiPost = new WikiPost();
-            wikiPost.setTeamPost(post);
-            wikiPost.setContent("초기 팀 위키 내용");  // 초기 위키 글 내용
-            wikiPost.setAuthor(member);  // 글 작성자가 처음 위키 작성자
-
-            post.addWikiPost(wikiPost);
-            wikiPostRepository.save(wikiPost);  // 추가된 부분
         }
 
-
-        handleRecruitmentFields(postDTO, post);
+        // 먼저 Post 엔티티를 저장
         Post savedPost = postRepository.save(post);
+
+        // 구인 게시판일 경우 위키 글을 생성
+        if (savedPost.getBoardType() == BoardType.RECRUITMENT) {
+            WikiPost wikiPost = new WikiPost();
+            wikiPost.setTeamPost(savedPost);  // 이미 저장된 Post를 참조
+            wikiPost.setContent("초기 팀 위키 내용");
+            wikiPost.setAuthor(member);
+            wikiPostRepository.save(wikiPost);  // WikiPost 저장
+        }
 
         return new PostDTO(
                 savedPost.getId(),
@@ -78,6 +78,7 @@ public class BoardService {
                 savedPost.getTeamLeader() != null ? savedPost.getTeamLeader().getName() : null
         );
     }
+
 
     @Transactional(readOnly = true)
     public WikiPostDTO getWikiForTeam(Long teamId, Member member) {
