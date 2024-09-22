@@ -30,7 +30,11 @@ public class CalendarController {
     public ResponseEntity<CalendarMemoDTO> getMemoByDate(@RequestParam String date) {
         LocalDate localDate = LocalDate.parse(date);
         CalendarMemoDTO memo = calendarService.getMemoByDate(localDate);
-        return ResponseEntity.ok(memo);
+        if (memo != null) {
+            return ResponseEntity.ok(memo);
+        } else {
+            return ResponseEntity.noContent().build(); // 메모가 없을 경우 204 No Content 반환
+        }
     }
 
     // 특정 날짜의 메모 생성 또는 업데이트

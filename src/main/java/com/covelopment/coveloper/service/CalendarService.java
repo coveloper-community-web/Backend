@@ -23,18 +23,20 @@ public class CalendarService {
     @Transactional(readOnly = true)
     public List<CalendarMemoDTO> getMemosForMonth(int year, int month) {
         YearMonth yearMonth = YearMonth.of(year, month);
-        return calendarMemoRepository.findAll().stream()
-                .filter(memo -> YearMonth.from(memo.getDate()).equals(yearMonth))
+        LocalDate startDate = yearMonth.atDay(1);
+        LocalDate endDate = yearMonth.atEndOfMonth();
+
+        List<CalendarMemo> memos = calendarMemoRepository.findByDateBetween(startDate, endDate);
+        return memos.stream()
                 .map(memo -> new CalendarMemoDTO(memo.getDate(), memo.getMemo()))
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public CalendarMemoDTO getMemoByDate(LocalDate date) {
-        CalendarMemo memo = calendarMemoRepository.findByDate(date)
-                .orElse(new CalendarMemo());
-        memo.setDate(date);
-        return new CalendarMemoDTO(memo.getDate(), memo.getMemo());
+        return calendarMemoRepository.findByDate(date)
+                .map(memo -> new CalendarMemoDTO(memo.getDate(), memo.getMemo()))
+                .orElse(null); // 메모가 없으면 null 반환
     }
 
     @Transactional
