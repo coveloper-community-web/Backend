@@ -2,6 +2,7 @@ package com.covelopment.coveloper.service;
 
 import com.covelopment.coveloper.dto.MemberDTO;
 import com.covelopment.coveloper.entity.Member;
+import com.covelopment.coveloper.entity.Post;
 import com.covelopment.coveloper.repository.MemberRepository;
 import com.covelopment.coveloper.security.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +12,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -60,19 +63,21 @@ public class MemberServiceTest {
         assertEquals("encodedPassword", registeredMember.getPassword());
     }
 
-
-
     @Test
     public void testAuthenticate() {
-        Member member = new Member(1L,"test@example.com", "password", "nickname", "name", "track1", "track2");
+        // teams 필드 초기화
+        List<Post> teams = new ArrayList<>();
+
+        Member member = new Member(1L, "test@example.com", "password", "nickname", "name", "track1", "track2", teams);
         String token = "test-jwt-token";
 
         when(memberRepository.findByEmail(member.getEmail())).thenReturn(Optional.of(member));
         when(jwtTokenProvider.createToken(member.getEmail())).thenReturn(token);
 
-        // Note: authenticate method now returns a token string
+        // 로그인 메서드 실행
         String resultToken = memberService.login(member.getEmail(), member.getPassword());
 
+        // 검증
         assertNotNull(resultToken);
         assertEquals(token, resultToken);
     }
