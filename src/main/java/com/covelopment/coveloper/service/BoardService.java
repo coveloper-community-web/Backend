@@ -51,6 +51,9 @@ public class BoardService {
             post.addTeamLeader(member);
         }
 
+        // 구인 게시판 필드 설정
+        handleRecruitmentFields(postDTO, post);
+
         // 먼저 Post 엔티티를 저장
         Post savedPost = postRepository.save(post);
 
